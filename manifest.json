@@ -1,12 +1,12 @@
 {
-    "name": "Dictionary Search (Dictionary.com/Youglish)",
+    "name": "English Helper",
     "version": "1.0.5",
-    "description": "Provides floating buttons for a quick search on word pronunciation on multiple websites.",
+    "description": "",
     "permissions": [
         "activeTab"
     ],
     "manifest_version": 3,
-    "author": "Leon",
+    "author": "Leon, GeeSuth",
     "icons": {
         "16": "research-16.png",
         "48": "research-48.png",
@@ -14,7 +14,7 @@
     },
     "action": {
         "default_popup": "popup.html",
-        "default_title": "Dictionary Search (Dictionary.com/Youglish)"
+        "default_title": "English Helper"
     },
     "content_scripts": [
         {
@@ -22,7 +22,7 @@
                 "<all_urls>"
             ],
             "js": [
-                "content.js"
+                "methods.js","content.js"
             ],
             "css": [
                 "content.css"
@@ -38,8 +38,7 @@
             "resources": [
                 "images/brandyg.png",
                 "images/cam-dict.jpeg",
-                "images/dict-com.png",
-                "images/howjsay.png"
+                "images/youtube.png"
             ]
         }
     ]

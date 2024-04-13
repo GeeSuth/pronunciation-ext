@@ -3,6 +3,7 @@ console.debug("Loaded dictionary search extension");
 
 let websiteButtonList = [];
 
+
 function createFloatingButtonContainer(x, y) {
   // reset the button list so that new buttons / links can be created for new text selection
   websiteButtonList = [];
@@ -11,26 +12,11 @@ function createFloatingButtonContainer(x, y) {
 
   container.className = "floating-button-container";
 
-  createWebsiteButton(
-    "Howjsay",
-    "https://howjsay.com/how-to-pronounce-",
-    "images/howjsay.png"
-  );
-  createWebsiteButton(
-    "Dictionary.com",
-    "https://www.dictionary.com/browse/",
-    "images/dict-com.png"
-  );
-  createWebsiteButton(
-    "Cambridge Dictionary",
-    "https://dictionary.cambridge.org/dictionary/english/",
-    "images/cam-dict.jpeg"
-  );
-  createWebsiteButton(
-    "Youglish",
-    "https://youglish.com/pronounce/",
-    "images/brandyg.png"
-  );
+
+  createWebsiteButtonEnum('Youglish', 'Youglish','images/brandyg.png');
+  createWebsiteButtonEnum('Youtube', 'Youtube','images/youtube.png');
+  createWebsiteButtonEnum('Cambridge Dictionary', 'Cambridge','images/cam-dict.jpeg');
+
 
   container.style.left = x + -20 + "px";
   container.style.top = y + -55 + "px";
@@ -41,7 +27,7 @@ function createFloatingButtonContainer(x, y) {
   });
 }
 
-function createWebsiteButton(btnTitle, baseUrl, iconUrl) {
+function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
   const button = document.createElement("img");
   button.src = chrome.runtime.getURL(iconUrl); // Set the path to your desired image
   button.alt = btnTitle;
@@ -49,8 +35,26 @@ function createWebsiteButton(btnTitle, baseUrl, iconUrl) {
   button.style.cursor = "pointer";
 
   button.addEventListener("click", function (event) {
-    const selectedText = window.getSelection().toString().toLowerCase().trim();
-    const url = `${baseUrl}${selectedText}`;
+
+    const selectedText = window.getSelection().toString(); //.toLowerCase().trim();
+
+    let url = "";
+
+    switch(DirectionSiteType) {
+      case 'Youglish':
+        url = getYouglishUrl(selectedText)
+        break;
+      case 'Youtube':
+        url = getYouTubeUrl(selectedText);
+        break;
+      case 'Cambridge':
+          url = getCambridgeUrl(selectedText);
+          break;
+        default:
+          break;
+
+    }
+
     openWebDict(event, url);
     if (container) {
       container.remove();
@@ -58,6 +62,8 @@ function createWebsiteButton(btnTitle, baseUrl, iconUrl) {
   });
   websiteButtonList.push(button);
 }
+
+
 
 document.addEventListener("mouseup", function (event) {
   const floatingButtonContainer = document.querySelector(
