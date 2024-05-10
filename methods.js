@@ -16,3 +16,9 @@ function getCambridgeUrl(valueSelected)
 {
     return `https://dictionary.cambridge.org/dictionary/english/${valueSelected.toLowerCase().trim()}`;
 }
+
+
+function getGoogleUrl(valueSelected)
+{
+    return `https://www.google.com/search?q=how+to+pronounce+${valueSelected.toLowerCase().trim()}`;
+}

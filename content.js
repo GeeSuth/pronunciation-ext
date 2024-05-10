@@ -16,6 +16,7 @@ function createFloatingButtonContainer(x, y) {
   createWebsiteButtonEnum('Youglish', 'Youglish','images/brandyg.png');
   createWebsiteButtonEnum('Youtube', 'Youtube','images/youtube.png');
   createWebsiteButtonEnum('Cambridge Dictionary', 'Cambridge','images/cam-dict.jpeg');
+  createWebsiteButtonEnum('Saying Google', 'Google','images/google.png');
 
 
   container.style.left = x + -20 + "px";
@@ -50,6 +51,9 @@ function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
       case 'Cambridge':
           url = getCambridgeUrl(selectedText);
           break;
+      case 'Google':
+      url = getGoogleUrl(selectedText);
+      break;
         default:
           break;
 

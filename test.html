@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+    </head>
+    <body>
+        <input type="button" onclick="openInWindow()" name="open" id="openid" value="Open" />
+    </body>
+
+    <script>
+        function openInWindow() 
+        {
+            window.open(
+            "https://youglish.com/pronounce/chocolate/english/us",
+            "_blank",
+            `width=600, height=700, left=${screen.availWidth}, top=10,toolbar=yes`
+            );
+        }
+    </script>
+</html>
