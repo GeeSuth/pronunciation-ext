@@ -4,6 +4,7 @@ console.debug("Loaded dictionary search extension");
 let websiteButtonList = [];
 
 
+
 function createFloatingButtonContainer(x, y) {
   // reset the button list so that new buttons / links can be created for new text selection
   websiteButtonList = [];
@@ -70,16 +71,24 @@ function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
 
 
 document.addEventListener("mouseup", function (event) {
+
+
   const floatingButtonContainer = document.querySelector(
     ".floating-button-container"
   );
   if (floatingButtonContainer) {
     return;
   }
-  const selectedText = window.getSelection().toString().trim();
-  if (selectedText !== "") {
-    createFloatingButtonContainer(event.clientX, event.clientY);
-  }
+
+  chrome.storage.sync.get(['enabled'], (data)=> {
+    if(data.enabled) 
+    {
+      const selectedText = window.getSelection().toString().trim();
+      if (selectedText !== "") {
+        createFloatingButtonContainer(event.clientX, event.clientY);
+      }
+    }
+  });
 });
 
 document.addEventListener("mousedown", function (event) {

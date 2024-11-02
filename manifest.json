@@ -1,9 +1,10 @@
 {
     "name": "English Helper",
-    "version": "1.0.5",
+    "version": "2.0.0",
     "description": "",
     "permissions": [
-        "activeTab"
+        "activeTab",
+        "storage"
     ],
     "manifest_version": 3,
     "author": "Leon, GeeSuth",
@@ -22,7 +23,7 @@
                 "<all_urls>"
             ],
             "js": [
-                "methods.js","content.js"
+                "methods.js","content.js","popup.js"
             ],
             "css": [
                 "content.css"
