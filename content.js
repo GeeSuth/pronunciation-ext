@@ -2,6 +2,7 @@
 console.debug("Loaded dictionary search extension");
 
 let websiteButtonList = [];
+let container = null;
 
 
 
@@ -9,15 +10,15 @@ function createFloatingButtonContainer(x, y) {
   // reset the button list so that new buttons / links can be created for new text selection
   websiteButtonList = [];
 
-  const container = document.createElement("div");
+  container = document.createElement("div");
 
   container.className = "floating-button-container";
 
 
-  createWebsiteButtonEnum('Youglish', 'Youglish','images/brandyg.png');
-  createWebsiteButtonEnum('Youtube', 'Youtube','images/youtube.png');
-  createWebsiteButtonEnum('Cambridge Dictionary', 'Cambridge','images/cam-dict.jpeg');
-  createWebsiteButtonEnum('Saying Google', 'Google','images/google.png');
+  websiteButtonList.push(createWebsiteButtonEnum('Youglish', 'Youglish','images/brandyg.png'));
+  websiteButtonList.push(createWebsiteButtonEnum('Youtube', 'Youtube','images/youtube.png'));
+  websiteButtonList.push(createWebsiteButtonEnum('Cambridge Dictionary', 'Cambridge','images/cam-dict.jpeg'));
+  websiteButtonList.push(createWebsiteButtonEnum('Saying Google', 'Google','images/google.png'));
 
 
   container.style.left = x + -20 + "px";
@@ -27,9 +28,11 @@ function createFloatingButtonContainer(x, y) {
   websiteButtonList.forEach((button) => {
     container.appendChild(button);
   });
+
+  return container;
 }
 
-function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
+function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl,word = null) {
   const button = document.createElement("img");
   button.src = chrome.runtime.getURL(iconUrl); // Set the path to your desired image
   button.alt = btnTitle;
@@ -38,7 +41,7 @@ function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
 
   button.addEventListener("click", function (event) {
 
-    const selectedText = window.getSelection().toString(); //.toLowerCase().trim();
+    const selectedText = word ?? window.getSelection().toString(); //.toLowerCase().trim();
 
     let url = "";
 
@@ -61,11 +64,13 @@ function createWebsiteButtonEnum(btnTitle, DirectionSiteType, iconUrl) {
     }
 
     openWebDict(event, url);
+    saveWordToHistory(selectedText);
     if (container) {
       container.remove();
     }
   });
-  websiteButtonList.push(button);
+  //websiteButtonList.push(button);
+  return button;
 }
 
 
