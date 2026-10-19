@@ -29,7 +29,8 @@
     ],
     "host_permissions": [
         "https://api.dictionaryapi.dev/*",
-        "https://translate.googleapis.com/*"
+        "https://translate.googleapis.com/*",
+        "https://clients5.google.com/*"
     ],
     "optional_host_permissions": [
         "https://*/*",

@@ -215,7 +215,8 @@
     translate: {
       source: "auto", // "auto" or a language code
       target: "th", // configurable target language
-      inline: true // show the translation inside the definition card
+      inline: true, // show the translated word inside the definition card
+      definitions: true // also translate the definition text (not just the word)
     },
     sync: {
       apiBaseUrl: "",
@@ -576,12 +577,82 @@
    * Translation (Google Translate public endpoint, via the SW)
    * ------------------------------------------------------------------ */
 
+  /*
+   * The dictionary payload gives us the best translation plus, for single
+   * words, alternative translations grouped by part of speech. Two hosts are
+   * tried because Google intermittently rate-limits one of them.
+   */
+  function translateUrls(sl, tl, text) {
+    const q = encodeURIComponent(text);
+    return [
+      "https://clients5.google.com/translate_a/single?client=dict-chrome-ex&sl=" +
+        encodeURIComponent(sl) +
+        "&tl=" +
+        encodeURIComponent(tl) +
+        "&dt=t&dt=bd&q=" +
+        q,
+      "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
+        encodeURIComponent(sl) +
+        "&tl=" +
+        encodeURIComponent(tl) +
+        "&dt=t&dt=bd&q=" +
+        q
+    ];
+  }
+
+  EH.parseTranslation = function (data, sl, tl) {
+    if (!Array.isArray(data)) return null;
+    const translated = Array.isArray(data[0])
+      ? data[0].map((seg) => (seg ? seg[0] : "")).join("")
+      : "";
+    if (!translated) return null;
+
+    const rawGroups = [];
+    const addGroup = (entry) => {
+      if (!Array.isArray(entry) || typeof entry[0] !== "string" || !Array.isArray(entry[1])) return false;
+      const terms = entry[1].filter((t) => typeof t === "string" && t.trim()).map((t) => t.trim());
+      if (!terms.length) return false;
+      rawGroups.push({ partOfSpeech: entry[0], terms: terms });
+      return true;
+    };
+
+    // Normal shape: data[1] is the list of dictionary entries.
+    let found = false;
+    if (Array.isArray(data[1])) data[1].forEach((entry) => { if (addGroup(entry)) found = true; });
+
+    // Defensive: some payload variants place it at another top-level index.
+    if (!found) {
+      for (let i = 1; i < data.length; i++) {
+        const top = data[i];
+        if (Array.isArray(top) && Array.isArray(top[0]) && top[0].length &&
+            typeof top[0][0] === "string" && Array.isArray(top[0][1])) {
+          top.forEach((entry) => addGroup(entry));
+        }
+      }
+    }
+
+    // De-duplicate terms, drop the primary translation, cap the list.
+    const seen = new Set([translated]);
+    const alternatives = [];
+    rawGroups.forEach((g) => {
+      const terms = g.terms.filter((t) => {
+        if (seen.has(t)) return false;
+        seen.add(t);
+        return true;
+      });
+      if (terms.length) alternatives.push({ partOfSpeech: g.partOfSpeech, terms: terms.slice(0, 8) });
+    });
+
+    return { text: translated, source: data[2] || sl, target: tl, alternatives: alternatives };
+  };
+
   EH.fetchTranslation = async function (word, target, source, force) {
     const text = String(word || "").trim();
     if (!text) return null;
     const tl = target || "en";
     const sl = source || "auto";
-    const key = sl + "|" + tl + "|" + text.toLowerCase();
+    // v2 = includes alternatives; keeps old single-word cache entries unused.
+    const key = "v2|" + sl + "|" + tl + "|" + text.toLowerCase();
 
     if (!force) {
       const cached = await EH.get("local", "transcache");
@@ -590,22 +661,15 @@
     }
 
     let value = null;
-    try {
-      const url =
-        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=" +
-        encodeURIComponent(sl) +
-        "&tl=" +
-        encodeURIComponent(tl) +
-        "&dt=t&q=" +
-        encodeURIComponent(text);
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        const translated = Array.isArray(data[0]) ? data[0].map((seg) => (seg ? seg[0] : "")).join("") : "";
-        if (translated) value = { text: translated, source: data[2] || sl, target: tl };
+    for (const url of translateUrls(sl, tl, text)) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        value = EH.parseTranslation(await res.json(), sl, tl);
+        if (value) break;
+      } catch (e) {
+        /* try the next host */
       }
-    } catch (e) {
-      value = null;
     }
 
     const cached = await EH.get("local", "transcache");

@@ -266,8 +266,40 @@
     const def = res && res.ok ? res.def : null;
     renderCard(def, word, audioBtn);
     await loadTranslationIntoCard(word);
+    await loadDefinitionTranslations(def);
 
     if (settings.features.autoSpeak) speak(word);
+  }
+
+  /*
+   * Translates the definition text of each meaning into the target language
+   * and appends it under that meaning. One request per meaning (cached).
+   */
+  async function loadDefinitionTranslations(def) {
+    if (!settings.features.translate || !settings.translate.definitions || !def || !card) return;
+
+    const target = settings.translate.target;
+    const source = settings.translate.source;
+    const blocks = card.querySelectorAll(".eh-meaning");
+
+    for (let i = 0; i < blocks.length && i < def.meanings.length; i++) {
+      const meaning = def.meanings[i];
+      const text = meaning.definitions
+        .slice(0, 2)
+        .map((d) => d.definition)
+        .join("; ")
+        .trim();
+      if (!text) continue;
+
+      const res = await api.runtime.sendMessage({ type: "translate", word: text, target: target, source: source });
+      const tr = res && res.ok ? res.translation : null;
+      if (!tr || !tr.text || !card) continue;
+
+      const el = document.createElement("div");
+      el.className = "eh-meaning-trans";
+      el.textContent = tr.text;
+      blocks[i].appendChild(el);
+    }
   }
 
   /*
@@ -299,6 +331,25 @@
     text.textContent = tr.text;
     block.appendChild(lang);
     block.appendChild(text);
+
+    if (Array.isArray(tr.alternatives) && tr.alternatives.length) {
+      const altWrap = document.createElement("div");
+      altWrap.className = "eh-alt-wrap";
+      tr.alternatives.forEach((group) => {
+        const row = document.createElement("div");
+        row.className = "eh-alt";
+        const pos = document.createElement("span");
+        pos.className = "eh-alt-pos";
+        pos.textContent = group.partOfSpeech;
+        const terms = document.createElement("span");
+        terms.className = "eh-alt-terms";
+        terms.textContent = group.terms.join(" \u00B7 ");
+        row.appendChild(pos);
+        row.appendChild(terms);
+        altWrap.appendChild(row);
+      });
+      block.appendChild(altWrap);
+    }
 
     const body = card.querySelector(".eh-body");
     const actions = card.querySelector(".eh-actions");

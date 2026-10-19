@@ -124,6 +124,12 @@
 .eh-translation { margin: 8px 0; padding: 8px 10px; background: var(--eh-hover); border-radius: 8px; }
 .eh-trans-lang { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--eh-muted); margin-bottom: 2px; }
 .eh-trans-text { font-size: 15px; }
+.eh-meaning-trans { margin-top: 5px; padding-left: 8px; border-left: 2px solid var(--eh-accent); color: var(--eh-fg); font-size: 13px; }
+
+.eh-alt-wrap { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.eh-alt { display: flex; gap: 6px; align-items: baseline; font-size: 12px; }
+.eh-alt-pos { flex: 0 0 auto; font-style: italic; color: var(--eh-muted); min-width: 42px; }
+.eh-alt-terms { color: var(--eh-fg); }
 
 .eh-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .eh-act {

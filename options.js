@@ -88,6 +88,10 @@
       settings.translate.inline = e.target.checked;
       scheduleSave();
     });
+    $("trans-definitions").addEventListener("change", (e) => {
+      settings.translate.definitions = e.target.checked;
+      scheduleSave();
+    });
 
     $("pageSize").addEventListener("change", (e) => {
       settings.history.pageSize = Math.max(5, Math.min(200, Number(e.target.value) || 20));
@@ -128,6 +132,7 @@
     $("trans-source").value = settings.translate.source || "auto";
     $("trans-target").value = settings.translate.target || "en";
     $("trans-inline").checked = !!settings.translate.inline;
+    $("trans-definitions").checked = !!settings.translate.definitions;
     $("srs-enabled").checked = !!settings.srs.enabled;
     $("srs-newPerDay").value = settings.srs.newPerDay;
     $("srs-ease").value = settings.srs.ease;

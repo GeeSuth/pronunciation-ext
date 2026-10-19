@@ -55,10 +55,13 @@ must load **first** everywhere.
   (`runtime.sendMessage({ type: "define" | "translate" | "sync-now" | "login" | "logout" })`).
   Permitted hosts: the dictionary API, the Google Translate endpoint, and the granted sync
   host (all declared in `manifest.json` `host_permissions` / `optional_host_permissions`).
-- **Translation** uses the public `translate.googleapis.com` endpoint through
-  `EH.fetchTranslation` (SW-only, cached in local `transcache` like `defcache`). Languages
-  come from `EH.TRANSLATE_LANGUAGES`; `settings.translate` holds `source` / `target` /
-  `inline`. Add a language by editing that array only.
+- **Translation** goes through `EH.fetchTranslation` (SW-only, cached in local `transcache`
+  like `defcache`). It tries `clients5.google.com` first and falls back to
+  `translate.googleapis.com` (both need host permission). `client=dict-chrome-ex` +
+  `dt=t&dt=bd` returns the primary translation plus `data[1]` = alternative terms grouped
+  by part of speech; `EH.parseTranslation` normalizes that into `{ text, alternatives[] }`.
+  Languages come from `EH.TRANSLATE_LANGUAGES`; `settings.translate` holds `source` /
+  `target` / `inline` / `definitions`. Add a language by editing that array only.
 - The service worker adds storage-change listeners (`EH.onHistoryChanged`,
   `EH.onSettingsChanged`); content and page scripts re-read settings the same way.
 - Bump `version` in `manifest.json` for releases.

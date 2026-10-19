@@ -14,8 +14,10 @@ Manifest V3, vanilla JavaScript. **No build step, no dependencies.**
   Cambridge, Google "how to pronounce", Merriam-Webster, Oxford Learner's, Collins,
   Wiktionary, Forvo, Longman — plus unlimited custom entries with a `{word}` template.
 - **Translate button** — one click opens Google Translate for the selected word in your
-  configured languages; the same target language is shown inline in the definition card.
-  Both source and target language are configurable (50+ languages).
+  configured languages. Both source and target language are configurable (50+ languages).
+  In the definition card the translated word is shown together with alternative
+  translations grouped by part of speech (e.g. noun/verb), and optionally the
+  definitions themselves are translated too.
 - **Inline definition card** (definitions, phonetics, audio, examples, synonyms, and the
   translation) from the Free Dictionary API, with text-to-speech.
 - **Word history** with search, sorting, pagination, per-word notes, source sentence, and
