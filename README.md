@@ -26,7 +26,8 @@ Manifest V3, vanilla JavaScript. **No build step, no dependencies.**
 - **Statistics**: totals, lookups, day streak, due count, 14-day chart, most looked up.
 - **Import / export** JSON and CSV.
 - **Account sync** (ready for a server — see below).
-- Light / dark theme, accent (US / UK / AU), button size, toolbar drag & position.
+- Light / dark theme, accent (US / UK / AU), button size, and a movable toolbar and
+  definition card (drag the card by its header).
 
 ## Development
 

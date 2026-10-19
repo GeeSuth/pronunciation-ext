@@ -190,14 +190,26 @@
       keepInViewport(toolbar, x - 20, y - 55);
     }
 
-    if (settings.features.dragToolbar) enableDrag(toolbar);
+    if (settings.features.dragToolbar) enableDrag(toolbar, { persist: true });
   }
 
-  function enableDrag(el) {
+  /*
+   * `el` is the drag handle; `opts.target` is the element that actually moves
+   * (defaults to the handle). The card uses its header as handle but moves the
+   * whole card.
+   */
+  function enableDrag(el, opts) {
+    const options = opts || {};
+    const target = options.target || el;
     const handle = (ev) => {
-      if (ev.target.closest(".eh-btn")) return;
-      const rect = el.getBoundingClientRect();
-      dragState = { dx: ev.clientX - rect.left, dy: ev.clientY - rect.top };
+      if (ev.target.closest(".eh-btn") || ev.target.closest("button")) return;
+      const rect = target.getBoundingClientRect();
+      dragState = {
+        dx: ev.clientX - rect.left,
+        dy: ev.clientY - rect.top,
+        el: target,
+        persist: !!options.persist
+      };
       ev.preventDefault();
     };
     el.addEventListener("mousedown", handle);
@@ -207,21 +219,21 @@
     "mousemove",
     (ev) => {
       if (!dragState) return;
-      const t = card || toolbar;
-      if (!t) return;
-      keepInViewport(t, ev.clientX - dragState.dx, ev.clientY - dragState.dy);
+      keepInViewport(dragState.el, ev.clientX - dragState.dx, ev.clientY - dragState.dy);
     },
     true
   );
 
   document.addEventListener(
     "mouseup",
-    async (ev) => {
+    async () => {
       if (!dragState) return;
+      const state = dragState;
       dragState = null;
-      const t = card || toolbar;
-      if (!t) return;
-      const rect = t.getBoundingClientRect();
+      // The toolbar remembers its spot; the definition card is free to move
+      // without overwriting the toolbar's saved position.
+      if (!state.persist) return;
+      const rect = state.el.getBoundingClientRect();
       const next = Object.assign({}, settings, { position: { mode: "fixed", x: Math.round(rect.left), y: Math.round(rect.top) } });
       await EH.saveSettings(next);
     },
@@ -255,6 +267,10 @@
     card.querySelector(".eh-card-close").addEventListener("click", clearUI);
     shadow.appendChild(card);
     keepInViewport(card, x - 20, y + 12);
+
+    if (settings.features.dragToolbar) {
+      enableDrag(card.querySelector(".eh-card-head"), { target: card, persist: false });
+    }
 
     const audioBtn = card.querySelector(".eh-audio");
     audioBtn.style.display = "none";

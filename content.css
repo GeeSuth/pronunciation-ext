@@ -86,6 +86,8 @@
 }
 
 .eh-card-head {
+  cursor: grab;
+  user-select: none;
   position: sticky;
   top: 0;
   display: flex;
@@ -97,6 +99,8 @@
 }
 .eh-word { font-weight: 700; font-size: 16px; }
 .eh-phon { color: var(--eh-muted); font-size: 13px; }
+.eh-card-head:active { cursor: grabbing; }
+
 .eh-audio, .eh-card-close {
   all: unset;
   cursor: pointer;
