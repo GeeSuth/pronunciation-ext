@@ -1,31 +1,55 @@
-// popup.js
-document.addEventListener('DOMContentLoaded', () => {
-    const english_helper_toggleButton = document.getElementById('english-helper-toggleButton');
+/*
+ * popup.js - toolbar popup: on/off toggle, quick stats, shortcuts.
+ */
+(function () {
+  "use strict";
+  const EH = window.EH;
+  const api = EH.api;
+  const $ = (id) => document.getElementById(id);
+  let settings = EH.mergeSettings({});
 
-    // Initialize button text based on the current state
-    chrome.storage.sync.get(['enabled'], (data) => {
-        english_helper_toggleButton.textContent = data.enabled ? 'English Helper is On' : 'English Helper is Off';
-        if (!data.enabled) {
-            english_helper_toggleButton.style.backgroundColor = '#dc3545'; // Red background when off
-        }
-    });
+  function paintToggle() {
+    const btn = $("toggle");
+    btn.textContent = settings.enabled ? "English Helper is ON" : "English Helper is OFF";
+    btn.classList.toggle("off", !settings.enabled);
+  }
 
-    // Add click event to toggle state
-    english_helper_toggleButton.addEventListener('click', () => {
-        chrome.storage.sync.get(['enabled'], (data) => {
-            const newState = !data.enabled;
-            chrome.storage.sync.set({ enabled: newState }, () => {
-                english_helper_toggleButton.textContent = newState ? 'English Helper is On' : 'English Helper is Off';
-                english_helper_toggleButton.style.backgroundColor = newState ? '#4CAF50' : '#dc3545'; // Green when on, red when off
-            });
-        });
-    });
-});
+  async function paintStats() {
+    const history = await EH.getHistory();
+    const stats = EH.computeStats(history);
+    $("s-total").textContent = stats.total;
+    $("s-today").textContent = stats.learnedToday;
+    $("s-due").textContent = settings.srs.enabled ? stats.due : "-";
+  }
 
+  async function paintSync() {
+    const auth = await EH.getAuth();
+    $("syncLine").textContent = auth ? "Synced account: " + (auth.email || "signed in") : "Not signed in \u2014 open Settings to enable sync.";
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const openButton = document.getElementById('openHistoryPage');
-    openButton.addEventListener('click', () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
-    });
+  function openPage(hash) {
+    api.tabs.create({ url: EH.runtimeGetURL("history.html") + (hash || "") });
+    window.close();
+  }
+
+  $("toggle").addEventListener("click", async () => {
+    settings.enabled = !settings.enabled;
+    settings = await EH.saveSettings(settings);
+    paintToggle();
+    api.runtime.sendMessage({ type: "refresh-badge" });
   });
+
+  $("openHistory").addEventListener("click", () => openPage("#history"));
+  $("openReview").addEventListener("click", () => openPage("#review"));
+  $("openOptions").addEventListener("click", () => {
+    EH.openOptions();
+    window.close();
+  });
+
+  (async function init() {
+    settings = await EH.getSettings();
+    paintToggle();
+    paintStats();
+    paintSync();
+  })();
+})();

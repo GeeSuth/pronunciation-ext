@@ -1,12 +1,9 @@
 {
     "name": "English Helper",
-    "version": "2.0.1",
-    "description": "",
-    "permissions": [
-        "activeTab",
-        "storage"
-    ],
+    "version": "3.1.0",
+    "description": "Floating pronunciation & dictionary buttons, a word history with spaced repetition, statistics, and (optional) account sync.",
     "manifest_version": 3,
+    "minimum_chrome_version": "110",
     "author": "Leon, GeeSuth",
     "icons": {
         "16": "research-16.png",
@@ -17,18 +14,57 @@
         "default_popup": "popup.html",
         "default_title": "English Helper"
     },
+    "options_ui": {
+        "page": "options.html",
+        "open_in_tab": true
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "permissions": [
+        "storage",
+        "contextMenus",
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "https://api.dictionaryapi.dev/*",
+        "https://translate.googleapis.com/*"
+    ],
+    "optional_host_permissions": [
+        "https://*/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+    ],
+    "commands": {
+        "lookup-selection": {
+            "suggested_key": {
+                "default": "Alt+Shift+P"
+            },
+            "description": "Look up / pronounce the selected text"
+        },
+        "toggle-enabled": {
+            "suggested_key": {
+                "default": "Alt+Shift+E"
+            },
+            "description": "Turn English Helper on or off"
+        }
+    },
     "content_scripts": [
         {
             "matches": [
                 "<all_urls>"
             ],
             "js": [
-                "methods.js","content.js","popup.js","history.js"
+                "common.js",
+                "methods.js",
+                "content.js"
             ],
             "css": [
                 "content.css"
             ],
-            "run_at": "document_end"
+            "run_at": "document_end",
+            "all_frames": false
         }
     ],
     "web_accessible_resources": [
@@ -37,6 +73,7 @@
                 "<all_urls>"
             ],
             "resources": [
+                "content.css",
                 "images/brandyg.png",
                 "images/cam-dict.jpeg",
                 "images/youtube.png",
