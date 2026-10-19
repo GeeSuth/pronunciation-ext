@@ -32,6 +32,11 @@
     window.close();
   }
 
+  function openExternal(url) {
+    api.tabs.create({ url: url });
+    window.close();
+  }
+
   $("toggle").addEventListener("click", async () => {
     settings.enabled = !settings.enabled;
     settings = await EH.saveSettings(settings);
@@ -44,6 +49,15 @@
   $("openOptions").addEventListener("click", () => {
     EH.openOptions();
     window.close();
+  });
+
+  $("githubLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    openExternal("https://github.com/GeeSuth");
+  });
+  $("issuesLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    openExternal("https://github.com/GeeSuth/pronunciation-ext/issues");
   });
 
   (async function init() {

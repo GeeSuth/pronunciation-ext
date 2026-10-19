@@ -1,6 +1,6 @@
 {
     "name": "English Helper",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "description": "Floating pronunciation & dictionary buttons, a word history with spaced repetition, statistics, and (optional) account sync.",
     "manifest_version": 3,
     "minimum_chrome_version": "110",

@@ -64,6 +64,11 @@ must load **first** everywhere.
   `target` / `inline` / `definitions`. Add a language by editing that array only.
 - The service worker adds storage-change listeners (`EH.onHistoryChanged`,
   `EH.onSettingsChanged`); content and page scripts re-read settings the same way.
+- **Options page:** never replace the live `settings` object with the return value of
+  `EH.saveSettings` (it is a deep clone). Dictionary rows hold references into the current
+  `settings.dictionaries`, so reassigning orphans every row's handlers and later edits stop
+  saving until reload. `options.js` keeps one live object and serializes saves via
+  `saving` / `pendingSave` in `flushSave`.
 - Bump `version` in `manifest.json` for releases.
 - `defcache` in local storage caches definitions for 30 days (bounded to 500 entries).
 

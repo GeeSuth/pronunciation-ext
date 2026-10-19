@@ -12,6 +12,8 @@
 
   let settings = EH.mergeSettings({});
   let saveTimer = null;
+  let saving = false;
+  let pendingSave = false;
 
   /* ------------------------------------------------------------------ */
 
@@ -23,12 +25,43 @@
     el._t = setTimeout(() => el.classList.remove("show"), 1800);
   }
 
+  /*
+   * IMPORTANT: never replace `settings` with the object returned by
+   * `EH.saveSettings`. It returns a deep clone, and the dictionary rows hold
+   * references into the current `settings.dictionaries`; swapping it would
+   * orphan those handlers so later edits silently stop saving.
+   *
+   * Saves are also serialized so a change made while a write is in flight is
+   * written by the follow-up pass instead of being overwritten.
+   */
   function scheduleSave() {
+    pendingSave = true;
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      settings = await EH.saveSettings(settings);
-      toast("Saved");
-    }, 250);
+    saveTimer = setTimeout(flushSave, 250);
+  }
+
+  async function flushSave() {
+    if (saving || !pendingSave) return;
+    pendingSave = false;
+    saving = true;
+    let failed = false;
+    try {
+      await EH.saveSettings(settings);
+    } catch (e) {
+      failed = true;
+      pendingSave = true;
+    } finally {
+      saving = false;
+    }
+    if (failed) {
+      toast("Save failed");
+      return;
+    }
+    if (pendingSave) {
+      scheduleSave();
+      return;
+    }
+    toast("Saved");
   }
 
   /* ------------------------------------------------------------------ *
