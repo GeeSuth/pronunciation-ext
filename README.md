@@ -9,25 +9,12 @@ Manifest V3, vanilla JavaScript. **No build step, no dependencies.**
 
 ## Features
 
-- **Floating toolbar** on text selection, fully configurable.
-- **Dictionaries** (enable / rename / reorder / add your own): Youglish, YouTube,
-  Cambridge, Google "how to pronounce", Merriam-Webster, Oxford Learner's, Collins,
-  Wiktionary, Forvo, Longman — plus unlimited custom entries with a `{word}` template.
-- **Translate button** — one click opens Google Translate for the selected word in your
-  configured languages. Both source and target language are configurable (50+ languages).
-  In the definition card the translated word is shown together with alternative
-  translations grouped by part of speech (e.g. noun/verb), and optionally the
-  definitions themselves are translated too.
-- **Inline definition card** (definitions, phonetics, audio, examples, synonyms, and the
-  translation) from the Free Dictionary API, with text-to-speech.
-- **Word history** with search, sorting, pagination, per-word notes, source sentence, and
-  the saved translation.
-- **Spaced repetition** review mode (Again / Hard / Good / Easy).
-- **Statistics**: totals, lookups, day streak, due count, 14-day chart, most looked up.
-- **Import / export** JSON and CSV.
-- **Account sync** (ready for a server — see below).
-- Light / dark theme, accent (US / UK / AU), button size, and a movable toolbar and
-  definition card (drag the card by its header).
+Supported websites:
+
+1. Dictionary.com
+2. Howjsay.com
+3. Cambridge Dictionary
+4. Youglish.com
 
 ## Development
 
@@ -59,6 +46,36 @@ The token is sent as `Authorization: Bearer <token>`. `/api/sync` receives the l
 history and returns the canonical merged history, which replaces the local copy.
 Sync runs automatically after changes when enabled, and on demand from settings.
 
-## License
+## Contributors
 
-[MIT License](LICENSE)
+Thanks to everyone who has contributed to this project!
+
+- [@wilsonkor](https://github.com/wilsonkor) - Contributed feature implementation for configurable delay timer to prevent accidental button triggers during text selection.
+
+## Changelog
+
+### v1.0.9
+
+- Added configurable timing options for dictionary popup buttons
+- New setting allows users to adjust delay duration to prevent accidental triggers
+- Users can now choose whether popup buttons appear immediately or after holding mouse for a customized duration
+
+### v1.0.8
+
+- Added options to enable/disable individual dictionaries
+
+### v1.0.7
+
+- Renamed the extension from "Dictionary Search" to "Popup Dict"
+
+### v1.0.6
+
+- Removed active tab permission for improved privacy
+
+### v1.0.5
+
+- Fixed inconsistent icon size
+
+### v1.0.4
+
+- Used website icons as buttons to reduce the menu size
