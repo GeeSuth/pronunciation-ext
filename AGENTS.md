@@ -38,6 +38,11 @@ must load **first** everywhere.
 - `content.js` — floating toolbar + inline card, rendered in a **Shadow DOM** host
   (`#english-helper-root`) for style isolation; it links `content.css` inside the shadow,
   so `content.css` must stay in `web_accessible_resources`.
+- `content.css` — **injected into every page** via `content_scripts.css`. Shadow-only
+  rules (`:host`, `.eh-*`) live here. Never add page/global selectors such as `body`,
+  `html`, or `*`; they leak into sites and broke GitHub dark mode. Extension-page styles
+  (body, tables, buttons) belong in `pages.css`, which is linked only by
+  `options.html`/`history.html` and is not injected anywhere.
 - `options.html/js` — the configuration page (dictionaries, features, sync, data).
 - `popup.html/js` — toolbar popup (toggle, quick stats, shortcuts).
 - `history.html/js` — History / Review / Stats tabs.
