@@ -1,71 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Improve your English by Hovering</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        width: 30rem;
-        margin: 0;
-        padding: 20px;
-        background-color: #f0f0f0;
-        color: #333;
-      }
-      .container {
-        background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-      h1 {
-        color: #4a4a4a;
-        margin-top: 0;
-      }
-      button {
-        background-color: #4CAF50;
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-      }
-      button:hover {
-        background-color: #45a049;
-      }
-      p {
-        line-height: 1.6;
-      }
-      a {
-        color: #1a73e8;
-        text-decoration: none;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>English Helper</h1>
-      <button id="english-helper-toggleButton"></button>
-      <button id="openHistoryPage">History Words</button>
-      <p>
-        I hope this is helping you to improve your English skills. If you have any questions or face any issues, please reach me on the
-        <a href="https://github.com/GeeSuth/pronunciation-ext/issues" target="_blank">Github Repo Issue Page</a>.
-      </p>
-      <p>
-        If you have any ideas or need further assistance, feel free to connect with me on
-        <a href="https://linkedin.com/in/geesuth" target="_blank">LinkedIn</a>.
-      </p>
+<head>
+  <meta charset="UTF-8" />
+  <title>English Helper</title>
+  <style>
+    body { width: 300px; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; color: #1f2430; background: #f7f8fa; }
+    .wrap { padding: 16px; }
+    h1 { font-size: 17px; margin: 0 0 2px; }
+    .sub { color: #6b7280; font-size: 12px; margin-bottom: 14px; }
+    #toggle { width: 100%; padding: 12px; border: none; border-radius: 10px; color: #fff; font-size: 15px; cursor: pointer; background: #4caf50; }
+    #toggle.off { background: #dc3545; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+    .stat { background: #fff; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+    .stat .v { font-size: 20px; font-weight: 700; }
+    .stat .k { font-size: 11px; color: #6b7280; }
+    .row { display: flex; gap: 8px; }
+    .row button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 13px; }
+    .row button:hover { background: #f1f3f5; }
+    .sync { margin-top: 12px; font-size: 11px; color: #6b7280; text-align: center; }
+    .footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: #6b7280; }
+    .footer a { color: #4b5563; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+    .footer a:hover { color: #111827; text-decoration: underline; }
+    .footer svg { width: 14px; height: 14px; fill: currentColor; }
+    .footer .dot { color: #d1d5db; }
+    a { color: #1a73e8; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>English Helper</h1>
+    <div class="sub">Select any word for pronunciation &amp; dictionary buttons.</div>
+    <button id="toggle">Loading&hellip;</button>
+
+    <div class="stats">
+      <div class="stat"><div class="v" id="s-total">0</div><div class="k">Words</div></div>
+      <div class="stat"><div class="v" id="s-today">0</div><div class="k">Today</div></div>
+      <div class="stat"><div class="v" id="s-due">0</div><div class="k">Due</div></div>
     </div>
-    <script src="popup.js"></script>
-  </body>
+
+    <div class="row">
+      <button id="openHistory">History</button>
+      <button id="openReview">Review</button>
+      <button id="openOptions">Settings</button>
+    </div>
+
+    <div class="sync" id="syncLine"></div>
+
+    <div class="footer">
+      <a id="githubLink" href="https://github.com/GeeSuth" target="_blank" rel="noopener" title="GeeSuth on GitHub">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span>GeeSuth</span>
+      </a>
+      <span class="dot">&middot;</span>
+      <a id="issuesLink" href="https://github.com/GeeSuth/pronunciation-ext/issues" target="_blank" rel="noopener">Report an issue</a>
+    </div>
+  </div>
+  <script src="common.js"></script>
+  <script src="methods.js"></script>
+  <script src="popup.js"></script>
+</body>
 </html>

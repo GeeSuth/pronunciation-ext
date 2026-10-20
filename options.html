@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Helper - Settings</title>
+  <link rel="stylesheet" href="pages.css" />
+  <style>
+    .eh-card-block { background: #fff; border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 16px; }
+    .eh-card-block h2 { margin: 0 0 12px; font-size: 16px; }
+    .eh-field { display: flex; align-items: center; gap: 10px; padding: 7px 0; flex-wrap: wrap; }
+    .eh-field label { min-width: 200px; }
+    .eh-field .eh-hint { color: #6b7280; font-size: 12px; }
+    .eh-field input[type=text], .eh-field input[type=password], .eh-field input[type=number] { min-width: 260px; }
+    .eh-switch { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+    .eh-switch input { width: 18px; height: 18px; }
+    .eh-dict-row { display: grid; grid-template-columns: 40px 28px 1fr 2fr auto auto; gap: 8px; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
+    .eh-dict-row input[type=text] { width: 100%; box-sizing: border-box; }
+    .eh-dict-row .eh-move { cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; width: 26px; height: 26px; }
+    .eh-status { font-size: 13px; color: #6b7280; }
+    .eh-status.ok { color: #16a34a; }
+    .eh-status.err { color: #dc3545; }
+    .eh-divider { height: 1px; background: #eee; margin: 14px 0; }
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1f2430; color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="eh-page">
+    <h1>English Helper &mdash; Settings</h1>
+    <p class="eh-sub">Everything here is configurable: which dictionaries appear, how they behave, and how your word history is stored or synced.</p>
+
+    <!-- General -->
+    <div class="eh-card-block">
+      <h2>General</h2>
+      <div class="eh-switch"><input type="checkbox" id="enabled" /><label for="enabled">Enable floating buttons on text selection</label></div>
+      <div class="eh-field">
+        <label for="theme">Theme</label>
+        <select class="eh-select" id="theme">
+          <option value="auto">Match system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="eh-field">
+        <label for="accent">Pronunciation accent (Youglish / TTS)</label>
+        <select class="eh-select" id="accent">
+          <option value="us">US English</option>
+          <option value="uk">UK English</option>
+          <option value="au">Australian English</option>
+        </select>
+      </div>
+      <div class="eh-field">
+        <label for="buttonSize">Button size</label>
+        <select class="eh-select" id="buttonSize">
+          <option value="sm">Small</option>
+          <option value="md">Medium</option>
+          <option value="lg">Large</option>
+        </select>
+      </div>
+      <div class="eh-field">
+        <label for="positionMode">Toolbar position</label>
+        <select class="eh-select" id="positionMode">
+          <option value="cursor">Follow the mouse</option>
+          <option value="fixed">Fixed (drag to place on any page)</option>
+        </select>
+        <span class="eh-hint">In "fixed" mode, drag the toolbar anywhere; the spot is remembered.</span>
+      </div>
+      <div class="eh-divider"></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="inlineCard" id="f-inlineCard" /><label for="f-inlineCard">Show inline definition &amp; audio card</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="translate" id="f-translate" /><label for="f-translate">Show translate button</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="tts" id="f-tts" /><label for="f-tts">Speak selected word (text-to-speech)</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="autoSpeak" id="f-autoSpeak" /><label for="f-autoSpeak">Auto-speak when a selection is made</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="contextSentence" id="f-contextSentence" /><label for="f-contextSentence">Save the surrounding sentence with each word</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="contextMenu" id="f-contextMenu" /><label for="f-contextMenu">Right-click menu lookup</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="badge" id="f-badge" /><label for="f-badge">Show count badge on the toolbar icon</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="dragToolbar" id="f-dragToolbar" /><label for="f-dragToolbar">Allow dragging the toolbar and definition card</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="closeOnClickOutside" id="f-closeOnClickOutside" /><label for="f-closeOnClickOutside">Close when clicking elsewhere</label></div>
+      <div class="eh-switch"><input type="checkbox" data-feature="openInPopupWindow" id="f-openInPopupWindow" /><label for="f-openInPopupWindow">Open dictionaries in a popup window (off = new tab)</label></div>
+    </div>
+
+    <!-- Card content -->
+    <div class="eh-card-block">
+      <h2>Definition card content</h2>
+      <div class="eh-switch"><input type="checkbox" data-card="definition" id="c-definition" /><label for="c-definition">Show definitions</label></div>
+      <div class="eh-switch"><input type="checkbox" data-card="audio" id="c-audio" /><label for="c-audio">Show audio pronunciation</label></div>
+      <div class="eh-switch"><input type="checkbox" data-card="examples" id="c-examples" /><label for="c-examples">Show example sentences</label></div>
+      <div class="eh-switch"><input type="checkbox" data-card="synonyms" id="c-synonyms" /><label for="c-synonyms">Show synonyms</label></div>
+    </div>
+
+    <!-- Translation -->
+    <div class="eh-card-block">
+      <h2>Translation</h2>
+      <div class="eh-field">
+        <label for="trans-source">Source language</label>
+        <select class="eh-select" id="trans-source"></select>
+      </div>
+      <div class="eh-field">
+        <label for="trans-target">Translate into</label>
+        <select class="eh-select" id="trans-target"></select>
+      </div>
+      <div class="eh-switch"><input type="checkbox" id="trans-inline" /><label for="trans-inline">Show the translation inside the definition card</label></div>
+      <div class="eh-switch"><input type="checkbox" id="trans-definitions" /><label for="trans-definitions">Also translate the definition text (not just the word)</label></div>
+      <p class="eh-hint" style="color:#6b7280;font-size:12px">The translate button opens Google Translate in your configured languages; the inline translation uses the same target language.</p>
+    </div>
+
+    <!-- Dictionaries -->
+    <div class="eh-card-block">
+      <h2>Dictionaries</h2>
+      <p class="eh-hint" style="color:#6b7280;font-size:12px;margin-top:-6px">
+        Enable, rename, reorder, or add your own. Use <code>{word}</code> for the selected word and <code>{accent}</code> for the accent code (e.g. us/uk).
+      </p>
+      <div id="dictList"></div>
+      <div class="eh-toolbar-row" style="margin-top:12px">
+        <button class="eh-btn-ghost" id="addDict">+ Add custom dictionary</button>
+        <button class="eh-btn-ghost" id="resetDicts">Restore defaults</button>
+      </div>
+    </div>
+
+    <!-- History / SRS -->
+    <div class="eh-card-block">
+      <h2>History &amp; spaced repetition</h2>
+      <div class="eh-field">
+        <label for="pageSize">Rows per page in history</label>
+        <input class="eh-input" type="number" id="pageSize" min="5" max="200" />
+      </div>
+      <div class="eh-switch"><input type="checkbox" data-history="dedupe" id="h-dedupe" /><label for="h-dedupe">Merge duplicate words (count occurrences)</label></div>
+      <div class="eh-switch"><input type="checkbox" data-history="captureSentence" id="h-captureSentence" /><label for="h-captureSentence">Capture source sentence</label></div>
+      <div class="eh-divider"></div>
+      <div class="eh-switch"><input type="checkbox" id="srs-enabled" data-srs="enabled" /><label for="srs-enabled">Enable review scheduling (spaced repetition)</label></div>
+      <div class="eh-field">
+        <label for="srs-newPerDay">New words to review per day</label>
+        <input class="eh-input" type="number" id="srs-newPerDay" min="1" max="200" />
+      </div>
+      <div class="eh-field">
+        <label for="srs-ease">Base ease factor</label>
+        <input class="eh-input" type="number" id="srs-ease" step="0.1" min="1.3" max="4" />
+      </div>
+    </div>
+
+    <!-- Sync -->
+    <div class="eh-card-block">
+      <h2>Account &amp; sync</h2>
+      <p class="eh-hint" style="color:#6b7280;font-size:12px;margin-top:-6px">
+        Point this at your English Helper server (e.g. <code>https://api.example.com</code>). Endpoints used: <code>/api/auth/login</code>, <code>/api/auth/logout</code>, <code>/api/sync</code>.
+      </p>
+      <div class="eh-field">
+        <label for="sync-url">Server URL</label>
+        <input class="eh-input" type="text" id="sync-url" placeholder="https://api.example.com" />
+        <button class="eh-btn-ghost" id="grantHost">Grant access</button>
+      </div>
+      <div class="eh-field">
+        <label for="sync-email">Email</label>
+        <input class="eh-input" type="text" id="sync-email" />
+      </div>
+      <div class="eh-field">
+        <label for="sync-password">Password</label>
+        <input class="eh-input" type="password" id="sync-password" />
+      </div>
+      <div class="eh-switch"><input type="checkbox" id="sync-auto" /><label for="sync-auto">Auto-sync after changes</label></div>
+      <div class="eh-toolbar-row">
+        <button class="eh-btn-primary" id="loginBtn">Log in</button>
+        <button class="eh-btn-ghost" id="syncNowBtn">Sync now</button>
+        <button class="eh-btn-ghost" id="logoutBtn">Log out</button>
+        <span class="eh-status" id="syncStatus"></span>
+      </div>
+    </div>
+
+    <!-- Data -->
+    <div class="eh-card-block">
+      <h2>Data</h2>
+      <div class="eh-toolbar-row">
+        <button class="eh-btn-ghost" id="exportJson">Export JSON</button>
+        <button class="eh-btn-ghost" id="exportCsv">Export CSV</button>
+        <button class="eh-btn-ghost" id="importBtn">Import JSON</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none" />
+        <button class="eh-btn-danger" id="clearHistory">Clear history</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="common.js"></script>
+  <script src="methods.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

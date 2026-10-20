@@ -1,28 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>English Helper- History Words</title>
-    <link rel="stylesheet" href="content.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Helper - History</title>
+  <link rel="stylesheet" href="pages.css" />
 </head>
 <body>
-    <h1 style="padding-left: 30px;padding-top: 30px;"> History Words</h1>
-    <div class="history-container">
-        <table class="history-table">
-            <thead>
-                <tr>
-                    <th class="sortable" data-sort="word">Word <span class="sort-icon">↕</span></th>
-                    <th class="sortable" data-sort="datetime">First Learn<span class="sort-icon">↕</span></th>
-                    <th class="sortable" data-sort="count"> Count <span class="sort-icon">↕</span> </th>
-                    <th>Review</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="listContainer">
-            </tbody>
-        </table>
+  <div class="eh-page">
+    <h1>English Helper</h1>
+    <p class="eh-sub">Your saved words, review queue, and learning stats.</p>
+
+    <div class="eh-tabs">
+      <button class="eh-tab active" data-tab="history">History</button>
+      <button class="eh-tab" data-tab="review">Review</button>
+      <button class="eh-tab" data-tab="stats">Stats</button>
     </div>
-    <script src="history.js"></script>
-    <script src="content.js"></script>
-    <script src="methods.js"></script>
+
+    <!-- History -->
+    <section class="eh-panel active" id="panel-history">
+      <div class="eh-toolbar-row">
+        <input class="eh-input" type="search" id="search" placeholder="Search words, sentences, notes..." style="flex:1;min-width:220px" />
+        <select class="eh-select" id="filter">
+          <option value="all">All words</option>
+          <option value="due">Due for review</option>
+          <option value="mastered">Mastered</option>
+        </select>
+        <button class="eh-btn-ghost" id="exportCsv">Export CSV</button>
+      </div>
+      <div class="history-container">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="word">Word <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="datetime">Last seen <span class="sort-icon"></span></th>
+              <th class="sortable" data-sort="count">Count <span class="sort-icon"></span></th>
+              <th>Sentence / notes</th>
+              <th>Review</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="listContainer"></tbody>
+        </table>
+      </div>
+      <div class="eh-pager">
+        <button class="eh-btn-ghost" id="prevPage">&larr; Prev</button>
+        <span id="pageInfo"></span>
+        <button class="eh-btn-ghost" id="nextPage">Next &rarr;</button>
+      </div>
+    </section>
+
+    <!-- Review -->
+    <section class="eh-panel" id="panel-review">
+      <div class="review-card" id="reviewCard">
+        <div id="reviewEmpty" class="eh-empty">Loading&hellip;</div>
+        <div id="reviewBody" style="display:none">
+          <div class="review-word" id="reviewWord"></div>
+          <div class="review-sentence" id="reviewSentence"></div>
+          <button class="eh-btn-primary" id="revealBtn">Reveal answer</button>
+          <div class="review-answer" id="reviewAnswer">
+            <div class="eh-toolbar-row" id="reviewLinks" style="justify-content:center"></div>
+            <div class="review-grades">
+              <button class="grade grade-0" data-grade="0">Again</button>
+              <button class="grade grade-1" data-grade="1">Hard</button>
+              <button class="grade grade-2" data-grade="2">Good</button>
+              <button class="grade grade-3" data-grade="3">Easy</button>
+            </div>
+          </div>
+        </div>
+        <div class="eh-pager" id="reviewProgress"></div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="eh-panel" id="panel-stats">
+      <div class="eh-stats-grid" id="statsGrid"></div>
+      <div class="eh-bars" id="statsBars"></div>
+      <h2 style="font-size:15px;margin:18px 0 6px">Most looked up</h2>
+      <div class="history-container">
+        <table class="history-table"><tbody id="topList"></tbody></table>
+      </div>
+    </section>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="methods.js"></script>
+  <script src="history.js"></script>
 </body>
 </html>

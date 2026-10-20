@@ -1,102 +1,156 @@
-/* content.css */
+/*
+ * content.css - styles for the Shadow-DOM toolbar / definition card that is
+ * injected into web pages (content.js).
+ *
+ * IMPORTANT: this file is declared in manifest.json `content_scripts.css`, so
+ * it is injected into EVERY page. It must contain only rules that are scoped
+ * to the shadow root (`:host`, and classes that only exist inside the shadow).
+ * Never add bare element selectors like `body { ... }` here - they leak into
+ * the host page and break sites (e.g. GitHub dark mode).
+ *
+ * Extension pages (options.html, history.html) link pages.css instead.
+ */
 
-.floating-button {
-  position: relative;
-  background-color: #ffffff;
-  color: rgb(251, 119, 119);
-  border: 1px solid rgb(52, 52, 52);
-  border-radius: 5px;
-  padding: 5px;
-  margin: 2px;
-  cursor: pointer;
-  font-size: 12px;
-  display: inline-block;
-  width: 28px;
-  height: 28px;
-  box-sizing: border-box;
+/* ===================== Shadow-DOM toolbar / card ===================== */
+
+:host {
+  all: initial;
+  --eh-bg: #ffffff;
+  --eh-fg: #1f2430;
+  --eh-muted: #6b7280;
+  --eh-border: #e5e7eb;
+  --eh-accent: #4caf50;
+  --eh-danger: #dc3545;
+  --eh-hover: #f1f3f5;
+  --eh-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+:host([data-eh-theme="dark"]) {
+  --eh-bg: #1f2430;
+  --eh-fg: #f3f4f6;
+  --eh-muted: #9ca3af;
+  --eh-border: #374151;
+  --eh-hover: #2b3242;
+  --eh-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
-.floating-button-container {
+.eh-toolbar {
   position: fixed;
-  z-index: 9999;
-  background-color: #ffffff;
-  color: red;
-  border: none;
-  border-radius: 5px;
-  /* padding: 5px; */
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.floating-button:hover {
-  background-color: #dcdcdc;
-}
-
-
-
-
-
-
-
-/******* History  ********/
-
-
-.history-container {
-  margin: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  overflow: hidden;
-}
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  font-size: 15px;
-}
-.history-table th,
-.history-table td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
-}
-.history-table thead {
-  background-color: #f8f9fa;
-  color: #333;
-}
-.history-table tbody tr:hover {
-  background-color: #f5f5f5;
-}
-.remove-btn {
-  padding: 6px 12px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.remove-btn:hover {
-  background-color: #c82333;
-}
-
-
-.sortable {
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--eh-bg);
+  border: 1px solid var(--eh-border);
+  border-radius: 10px;
+  box-shadow: var(--eh-shadow);
   user-select: none;
-}
-.sortable:hover {
-  background-color: #e9ecef;
-}
-.sort-icon {
-  font-size: 0.8em;
-  margin-left: 5px;
-}
-.sort-asc .sort-icon::after {
-  content: "↑";
-}
-.sort-desc .sort-icon::after {
-  content: "↓"; 
+  max-width: 92vw;
+  flex-wrap: wrap;
 }
 
+.eh-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--eh-fg);
+}
+:host([data-eh-size="sm"]) .eh-btn { width: 24px; height: 24px; font-size: 13px; }
+:host([data-eh-size="lg"]) .eh-btn { width: 38px; height: 38px; font-size: 19px; }
 
+.eh-btn:hover { background: var(--eh-hover); }
+.eh-btn:focus-visible { outline: 2px solid var(--eh-accent); }
+
+.eh-icon { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; display: block; }
+:host([data-eh-size="lg"]) .eh-icon { width: 26px; height: 26px; }
+.eh-emoji { font-size: 16px; text-align: center; line-height: 1; }
+.eh-close { color: var(--eh-muted); }
+
+.eh-card {
+  position: fixed;
+  box-sizing: border-box;
+  width: 340px;
+  max-width: 92vw;
+  max-height: 64vh;
+  overflow: auto;
+  background: var(--eh-bg);
+  color: var(--eh-fg);
+  border: 1px solid var(--eh-border);
+  border-radius: 12px;
+  box-shadow: var(--eh-shadow);
+  font-size: 13px;
+}
+
+.eh-card-head {
+  cursor: grab;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--eh-bg);
+  border-bottom: 1px solid var(--eh-border);
+}
+.eh-word { font-weight: 700; font-size: 16px; }
+.eh-phon { color: var(--eh-muted); font-size: 13px; }
+.eh-card-head:active { cursor: grabbing; }
+
+.eh-audio, .eh-card-close {
+  all: unset;
+  cursor: pointer;
+  margin-left: auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--eh-fg);
+}
+.eh-card-close { margin-left: 0; color: var(--eh-muted); }
+.eh-audio:hover, .eh-card-close:hover { background: var(--eh-hover); }
+
+.eh-body { padding: 10px 12px 12px; }
+.eh-loading, .eh-empty { color: var(--eh-muted); padding: 6px 0; }
+.eh-meaning { margin-bottom: 10px; }
+.eh-pos { font-style: italic; color: var(--eh-muted); margin-bottom: 4px; }
+.eh-body ul { margin: 0; padding-left: 18px; }
+.eh-body li { margin-bottom: 4px; line-height: 1.45; }
+.eh-example { color: var(--eh-muted); font-style: italic; }
+.eh-syn { margin-top: 4px; color: var(--eh-muted); font-size: 12px; }
+
+.eh-translation { margin: 8px 0; padding: 8px 10px; background: var(--eh-hover); border-radius: 8px; }
+.eh-trans-lang { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--eh-muted); margin-bottom: 2px; }
+.eh-trans-text { font-size: 15px; }
+.eh-meaning-trans { margin-top: 5px; padding-left: 8px; border-left: 2px solid var(--eh-accent); color: var(--eh-fg); font-size: 13px; }
+
+.eh-alt-wrap { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.eh-alt { display: flex; gap: 6px; align-items: baseline; font-size: 12px; }
+.eh-alt-pos { flex: 0 0 auto; font-style: italic; color: var(--eh-muted); min-width: 42px; }
+.eh-alt-terms { color: var(--eh-fg); }
+
+.eh-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.eh-act {
+  all: unset;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--eh-border);
+  font-size: 12px;
+  color: var(--eh-fg);
+}
+.eh-act:hover { background: var(--eh-hover); }
+.eh-save { background: var(--eh-accent); color: #fff; border-color: var(--eh-accent); }
+.eh-save:hover { filter: brightness(0.95); background: var(--eh-accent); }
+.eh-save:disabled { opacity: 0.7; cursor: default; }
+.eh-act-link { color: var(--eh-muted); }
