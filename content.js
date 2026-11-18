@@ -23,17 +23,42 @@
     settings = s;
   });
 
+  /*
+   * A content script can outlive the extension (reload / update / merge). In
+   * that state api.runtime.sendMessage rejects with "Extension context
+   * invalidated"; swallow it so the page console stays clean.
+   */
+  function sendMessage(msg) {
+    try {
+      const p = api.runtime.sendMessage(msg);
+      return p && typeof p.catch === "function" ? p.catch(() => null) : Promise.resolve(p);
+    } catch (e) {
+      return Promise.resolve(null);
+    }
+  }
+
   EH.onSettingsChanged((s) => {
     settings = s;
     applyTheme();
+    // Blocked from the popup / options while our UI is open: close it.
+    if (isSiteBlocked()) clearUI();
   });
+
+  /*
+   * Sites the user switched off with the 🚫 toolbar button (or the popup /
+   * options page). Nothing is shown there, including the right-click lookup.
+   */
+  function isSiteBlocked() {
+    return EH.isSiteExcluded(location.href, settings);
+  }
 
   /* ------------------------------------------------------------------ *
    * Host / shadow root
    * ------------------------------------------------------------------ */
 
   function ensureHost() {
-    if (host && document.documentElement.contains(host)) return;
+    if (host && document.documentElement.contains(host)) return true;
+    if (!EH.isContextAlive()) return false;
     host = document.createElement("div");
     host.id = "english-helper-root";
     host.style.position = "fixed";
@@ -43,12 +68,53 @@
     host.style.height = "0";
     host.style.zIndex = "2147483647";
     shadow = host.attachShadow({ mode: "open" });
+    const cssUrl = EH.runtimeGetURL("content.css");
+    if (!cssUrl) {
+      host = null;
+      shadow = null;
+      return false;
+    }
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = EH.runtimeGetURL("content.css");
+    link.href = cssUrl;
+    link.addEventListener("error", loadCssFallback);
     shadow.appendChild(link);
     document.documentElement.appendChild(host);
     applyTheme();
+    return true;
+  }
+
+  /*
+   * A strict page Content-Security-Policy can block the shadow <link> to
+   * chrome-extension://content.css. Without it our elements have no
+   * `position: fixed`, so they land in the document flow (top-left of the
+   * page) no matter which coordinates we set. Ask the service worker for the
+   * CSS text (extension pages are not bound by the page CSP) and attach it as
+   * a constructed stylesheet, which CSP does not block.
+   */
+  async function loadCssFallback() {
+    if (!shadow || !EH.isContextAlive()) return;
+    let text = "";
+    try {
+      const res = await sendMessage({ type: "get-css", path: "content.css" });
+      text = res && res.ok ? res.text : "";
+    } catch (e) {
+      text = "";
+    }
+    if (!text || !shadow) return;
+    try {
+      const sheet = new CSSStyleSheet();
+      sheet.replaceSync(text);
+      shadow.adoptedStyleSheets = [sheet];
+    } catch (e) {
+      try {
+        const style = document.createElement("style");
+        style.textContent = text;
+        shadow.appendChild(style);
+      } catch (e2) {
+        /* give up: inline placement styles still keep the UI usable */
+      }
+    }
   }
 
   function applyTheme() {
@@ -67,13 +133,117 @@
     dragState = null;
   }
 
+  /*
+   * Layout-critical styles are also written inline so placement still works if
+   * the page blocks our stylesheet (see loadCssFallback): without them the
+   * element is `position: static` and left/top are ignored.
+   */
+  function lockPlacement(el) {
+    el.style.position = "fixed";
+    el.style.zIndex = "2147483647";
+    el.style.margin = "0";
+    el.style.boxSizing = "border-box";
+    if (el.className.indexOf("eh-toolbar") !== -1) {
+      el.style.display = "flex";
+      el.style.flexWrap = "wrap";
+      el.style.alignItems = "center";
+      el.style.maxWidth = "92vw";
+    }
+    return el;
+  }
+
+  /*
+   * Writes a fixed position, then compensates for pages that put a transform /
+   * filter / contain on an ancestor (which makes that ancestor the containing
+   * block for `position: fixed`, so our coordinates would otherwise be shifted).
+   * One measurement is enough because the offset is linear.
+   */
+  function positionEl(el, left, top) {
+    const x = Math.round(left);
+    const y = Math.round(top);
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    const rect = el.getBoundingClientRect();
+    if (!rect.width && !rect.height) return; // not laid out yet - nothing to correct
+    const dx = x - rect.left;
+    const dy = y - rect.top;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+      el.style.left = Math.round(x + dx) + "px";
+      el.style.top = Math.round(y + dy) + "px";
+    }
+  }
+
   function keepInViewport(el, x, y) {
     const w = el.offsetWidth || 220;
     const h = el.offsetHeight || 48;
-    const nx = Math.min(Math.max(8, x), window.innerWidth - w - 8);
-    const ny = Math.min(Math.max(8, y), window.innerHeight - h - 8);
-    el.style.left = nx + "px";
-    el.style.top = ny + "px";
+    const nx = Math.min(Math.max(8, x), Math.max(8, window.innerWidth - w - 8));
+    const ny = Math.min(Math.max(8, y), Math.max(8, window.innerHeight - h - 8));
+    positionEl(el, nx, ny);
+  }
+
+  /*
+   * Viewport rect of the last line of the current selection - the spot the user
+   * is actually looking at. Returns null when nothing usable is selected.
+   */
+  function selectionAnchor() {
+    try {
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+      const range = sel.getRangeAt(sel.rangeCount - 1);
+      let rect = null;
+      const rects = range.getClientRects ? range.getClientRects() : null;
+      if (rects && rects.length) {
+        for (let i = rects.length - 1; i >= 0; i--) {
+          const r = rects[i];
+          if (r && (r.width || r.height)) {
+            rect = r;
+            break;
+          }
+        }
+      }
+      if (!rect) {
+        const b = range.getBoundingClientRect();
+        if (b && (b.width || b.height)) rect = b;
+      }
+      if (!rect) return null;
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /*
+   * Places `el` right next to the selected text: under the selection when it
+   * fits, above it otherwise, always clamped to the viewport. `fallbackX/Y` are
+   * used when there is no live selection (context menu / keyboard commands).
+   */
+  function placeNextToSelection(el, fallbackX, fallbackY) {
+    const anchor = selectionAnchor();
+    if (!anchor) {
+      keepInViewport(el, fallbackX, fallbackY);
+      return;
+    }
+
+    const w = el.offsetWidth || 220;
+    const h = el.offsetHeight || 48;
+    const gap = 8;
+    const maxX = Math.max(gap, window.innerWidth - w - gap);
+    const maxY = Math.max(gap, window.innerHeight - h - gap);
+
+    let top = anchor.bottom + gap;
+    if (top > maxY) {
+      const above = anchor.top - h - gap;
+      top = above >= gap ? above : anchor.bottom + gap;
+    }
+    top = Math.min(Math.max(gap, top), maxY);
+
+    // Line up with the selection's left edge, or right-align it when the
+    // buttons would run off the right side of the viewport.
+    let left = anchor.left;
+    if (left > maxX || left + w > maxX) left = anchor.right - w;
+    left = Math.min(Math.max(gap, left), maxX);
+
+    positionEl(el, left, top);
   }
 
   /* ------------------------------------------------------------------ *
@@ -81,7 +251,7 @@
    * ------------------------------------------------------------------ */
 
   function makeIcon(dict) {
-    if (dict.icon) {
+    if (typeof dict.icon === "string" && dict.icon) {
       const img = document.createElement("img");
       img.src = EH.runtimeGetURL(dict.icon);
       img.alt = dict.name;
@@ -105,7 +275,8 @@
    * ------------------------------------------------------------------ */
 
   function showToolbar(word, x, y) {
-    ensureHost();
+    if (!ensureHost()) return;
+    hideToast();
     if (card) {
       card.remove();
       card = null;
@@ -114,6 +285,7 @@
 
     toolbar = document.createElement("div");
     toolbar.className = "eh-toolbar";
+    lockPlacement(toolbar);
 
     const dicts = settings.dictionaries
       .filter((d) => d.enabled)
@@ -171,6 +343,21 @@
       toolbar.appendChild(speakBtn);
     }
 
+    // "Don't show on this site" - only on real web pages.
+    const currentSite = EH.normalizeSite(location.href);
+    if (currentSite) {
+      const siteBtn = document.createElement("button");
+      siteBtn.className = "eh-btn eh-site-off";
+      siteBtn.title = "Don't show English Helper on " + currentSite;
+      siteBtn.textContent = "\uD83D\uDEAB";
+      siteBtn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        blockCurrentSite();
+      });
+      toolbar.appendChild(siteBtn);
+    }
+
     const closeBtn = document.createElement("button");
     closeBtn.className = "eh-btn eh-close";
     closeBtn.title = "Close";
@@ -187,7 +374,7 @@
     if (settings.position.mode === "fixed" && settings.position.x && settings.position.y) {
       keepInViewport(toolbar, settings.position.x, settings.position.y);
     } else {
-      keepInViewport(toolbar, x - 20, y - 55);
+      placeNextToSelection(toolbar, x, y);
     }
 
     if (settings.features.dragToolbar) enableDrag(toolbar, { persist: true });
@@ -207,6 +394,9 @@
       dragState = {
         dx: ev.clientX - rect.left,
         dy: ev.clientY - rect.top,
+        startX: ev.clientX,
+        startY: ev.clientY,
+        moved: false,
         el: target,
         persist: !!options.persist
       };
@@ -219,6 +409,8 @@
     "mousemove",
     (ev) => {
       if (!dragState) return;
+      if (!dragState.moved && Math.abs(ev.clientX - dragState.startX) < 3 && Math.abs(ev.clientY - dragState.startY) < 3) return;
+      dragState.moved = true;
       keepInViewport(dragState.el, ev.clientX - dragState.dx, ev.clientY - dragState.dy);
     },
     true
@@ -230,9 +422,10 @@
       if (!dragState) return;
       const state = dragState;
       dragState = null;
-      // The toolbar remembers its spot; the definition card is free to move
-      // without overwriting the toolbar's saved position.
-      if (!state.persist) return;
+      // Only "Fixed" mode remembers a drag; otherwise the toolbar keeps
+      // appearing right next to the selection the user just made.
+      if (!state.persist || !state.moved) return;
+      if (settings.position.mode !== "fixed") return;
       const rect = state.el.getBoundingClientRect();
       const next = Object.assign({}, settings, { position: { mode: "fixed", x: Math.round(rect.left), y: Math.round(rect.top) } });
       await EH.saveSettings(next);
@@ -240,12 +433,43 @@
     true
   );
 
+  /*
+   * Keep the toolbar glued to the selected words when the page scrolls or is
+   * resized (the toolbar itself is `position: fixed`).
+   */
+  let repositionQueued = false;
+  function queueReposition() {
+    if (!toolbar || dragState || repositionQueued) return;
+    if (settings.position.mode === "fixed") return;
+    repositionQueued = true;
+    window.requestAnimationFrame(() => {
+      repositionQueued = false;
+      if (!toolbar || dragState) return;
+      const anchor = selectionAnchor();
+      if (!anchor) return;
+      // Hide instead of parking the toolbar on the viewport edge when the
+      // selected text itself has been scrolled out of view.
+      if (anchor.bottom < 0 || anchor.top > window.innerHeight) {
+        toolbar.style.visibility = "hidden";
+        return;
+      }
+      toolbar.style.visibility = "";
+      placeNextToSelection(toolbar, 0, 0);
+    });
+  }
+
+  window.addEventListener("scroll", queueReposition, true);
+  window.addEventListener("resize", queueReposition);
+
   /* ------------------------------------------------------------------ *
    * Definition card
    * ------------------------------------------------------------------ */
 
   async function showCard(word, x, y) {
-    ensureHost();
+    if (!ensureHost()) return;
+    // The card opens under the toolbar it was launched from, so it stays next
+    // to the selection instead of jumping to the mouse position.
+    const toolbarRect = toolbar ? toolbar.getBoundingClientRect() : null;
     if (toolbar) {
       toolbar.remove();
       toolbar = null;
@@ -254,6 +478,7 @@
 
     card = document.createElement("div");
     card.className = "eh-card";
+    lockPlacement(card);
     card.innerHTML =
       '<div class="eh-card-head">' +
       '  <span class="eh-word"></span>' +
@@ -266,7 +491,8 @@
     card.querySelector(".eh-word").textContent = word;
     card.querySelector(".eh-card-close").addEventListener("click", clearUI);
     shadow.appendChild(card);
-    keepInViewport(card, x - 20, y + 12);
+    if (toolbarRect) keepInViewport(card, toolbarRect.left, toolbarRect.bottom + 8);
+    else keepInViewport(card, x - 20, y + 12);
 
     if (settings.features.dragToolbar) {
       enableDrag(card.querySelector(".eh-card-head"), { target: card, persist: false });
@@ -278,7 +504,7 @@
     currentWord = word;
     currentTranslation = "";
 
-    const res = await api.runtime.sendMessage({ type: "define", word: word });
+    const res = await sendMessage({ type: "define", word: word });
     const def = res && res.ok ? res.def : null;
     renderCard(def, word, audioBtn);
     await loadTranslationIntoCard(word);
@@ -307,7 +533,7 @@
         .trim();
       if (!text) continue;
 
-      const res = await api.runtime.sendMessage({ type: "translate", word: text, target: target, source: source });
+      const res = await sendMessage({ type: "translate", word: text, target: target, source: source });
       const tr = res && res.ok ? res.translation : null;
       if (!tr || !tr.text || !card) continue;
 
@@ -326,7 +552,7 @@
     if (!settings.features.translate || !settings.translate.inline || !card) return;
 
     const target = settings.translate.target;
-    const res = await api.runtime.sendMessage({
+    const res = await sendMessage({
       type: "translate",
       word: word,
       target: target,
@@ -451,7 +677,7 @@
       });
       save.textContent = "Saved \u2713";
       save.disabled = true;
-      api.runtime.sendMessage({ type: "refresh-badge" });
+      sendMessage({ type: "refresh-badge" });
     });
     row.appendChild(save);
 
@@ -487,6 +713,70 @@
    * Actions
    * ------------------------------------------------------------------ */
 
+  /*
+   * "Don't show on this site" - the toolbar button, with an undo toast so a
+   * misclick does not need a trip to the settings page.
+   */
+  async function blockCurrentSite() {
+    const site = EH.normalizeSite(location.href);
+    if (!site) return;
+    clearUI();
+    hideToast();
+    if (!EH.addExcludedSite(settings, site)) return;
+    await EH.saveSettings(settings);
+    showToast("Off on " + site, "Undo", () => unblockSite(site));
+  }
+
+  async function unblockSite(site) {
+    if (!EH.removeExcludedSite(settings, site)) return;
+    await EH.saveSettings(settings);
+    showToast("English Helper is back on " + site);
+  }
+
+  let toastEl = null;
+  let toastTimer = null;
+
+  function hideToast() {
+    clearTimeout(toastTimer);
+    if (toastEl) toastEl.remove();
+    toastEl = null;
+  }
+
+  function showToast(message, actionLabel, onAction) {
+    if (!ensureHost()) return;
+    hideToast();
+
+    const el = document.createElement("div");
+    el.className = "eh-toast";
+    lockPlacement(el);
+
+    const text = document.createElement("span");
+    text.className = "eh-toast-text";
+    text.textContent = message;
+    el.appendChild(text);
+
+    if (actionLabel) {
+      const btn = document.createElement("button");
+      btn.className = "eh-toast-act";
+      btn.textContent = actionLabel;
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        hideToast();
+        if (onAction) onAction();
+      });
+      el.appendChild(btn);
+    }
+
+    shadow.appendChild(el);
+    toastEl = el;
+
+    const w = el.offsetWidth || 200;
+    const h = el.offsetHeight || 36;
+    positionEl(el, (window.innerWidth - w) / 2, window.innerHeight - h - 26);
+    toastTimer = setTimeout(hideToast, 6000);
+  }
+
   function openExternal(url, ev) {
     if (!url) return;
     if (settings.features.openInPopupWindow) {
@@ -504,7 +794,7 @@
       sourceUrl: location.href,
       translation: currentTranslation
     });
-    api.runtime.sendMessage({ type: "refresh-badge" });
+    sendMessage({ type: "refresh-badge" });
   }
 
   function openDictionary(dict, word, ev) {
@@ -572,6 +862,8 @@
     if (toolbar || card) return;
     await ready;
     if (!settings.enabled) return;
+    if (isSiteBlocked()) return;
+    if (!EH.isContextAlive()) return;
 
     const selected = String(window.getSelection().toString() || "").trim();
     if (!selected) return;
@@ -597,12 +889,22 @@
     if (!msg || !msg.type) return false;
 
     if (msg.type === "lookup") {
+      // Blocked site: acknowledge so the service worker does not fall back to
+      // opening a dictionary tab.
+      if (isSiteBlocked()) {
+        sendResponse({ ok: true, excluded: true });
+        return false;
+      }
       showToolbar(msg.word, Math.round(window.innerWidth / 2) - 60, Math.round(window.innerHeight / 3));
       sendResponse({ ok: true });
       return false;
     }
 
     if (msg.type === "lookup-selection") {
+      if (isSiteBlocked()) {
+        sendResponse({ ok: true, excluded: true });
+        return false;
+      }
       const selected = String(window.getSelection().toString() || "").trim();
       if (selected) {
         showToolbar(selected, Math.round(window.innerWidth / 2) - 60, Math.round(window.innerHeight / 3));

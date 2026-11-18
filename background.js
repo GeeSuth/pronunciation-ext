@@ -66,8 +66,8 @@ api.commands.onCommand.addListener(async (command) => {
     const tabs = await api.tabs.query({ active: true, currentWindow: true });
     const tab = tabs[0];
     if (!tab) return;
-    const ok = await sendToTab(tab.id, { type: "lookup-selection" });
-    if (!ok) {
+    const res = await sendToTab(tab.id, { type: "lookup-selection" });
+    if (!res) {
       const word = await readSelection(tab.id);
       if (word) await dispatchLookup(tab, word.trim());
     }
@@ -88,13 +88,16 @@ async function readSelection(tabId) {
 
 /*
  * Send a message to a tab's content script, injecting it first if the page
- * was already open when the extension (re)loaded.
+ * was already open when the extension (re)loaded. Resolves to the content
+ * script's response, or null when no content script could handle it (chrome://,
+ * the web store, a detached tab...). A null result is what triggers the
+ * "open the dictionary in a tab" fallback.
  */
 async function sendToTab(tabId, msg) {
-  if (tabId == null) return false;
+  if (tabId == null) return null;
   try {
-    await api.tabs.sendMessage(tabId, msg);
-    return true;
+    const res = await api.tabs.sendMessage(tabId, msg);
+    return res || { ok: true };
   } catch (e) {
     /* not injected yet */
   }
@@ -104,18 +107,20 @@ async function sendToTab(tabId, msg) {
       target: { tabId: tabId },
       files: ["common.js", "methods.js", "content.js"]
     });
-    await api.tabs.sendMessage(tabId, msg);
-    return true;
+    const res = await api.tabs.sendMessage(tabId, msg);
+    return res || { ok: true };
   } catch (e) {
-    return false;
+    return null;
   }
 }
 
 /* Fallback for pages where no content script can run (chrome://, web store). */
 async function dispatchLookup(tab, word) {
   const settings = await self.EH.getSettings();
-  const ok = await sendToTab(tab && tab.id, { type: "lookup", word: word, sentence: "" });
-  if (ok) return;
+  const res = await sendToTab(tab && tab.id, { type: "lookup", word: word, sentence: "" });
+  // Delivered: the content script showed the toolbar, or the site is on the
+  // user's block list and deliberately did nothing.
+  if (res) return;
   const dict = settings.dictionaries.find((d) => d.enabled) || settings.dictionaries[0];
   if (dict && tab && tab.id != null) {
     const url = self.EH.buildUrl(dict, word, settings);
@@ -166,6 +171,23 @@ api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "refresh-badge") {
     self.EH.getSettings().then((s) => updateBadge(s));
     sendResponse({ ok: true });
+    return true;
+  }
+
+  /*
+   * Pages with a strict CSP block the content script's <link> to
+   * chrome-extension://content.css. The content script asks for the text so it
+   * can attach it as a constructed stylesheet instead.
+   */
+  if (msg.type === "get-css") {
+    if (msg.path !== "content.css") {
+      sendResponse({ ok: false });
+      return false;
+    }
+    fetch(self.EH.api.runtime.getURL("content.css"))
+      .then((r) => r.text())
+      .then((text) => sendResponse({ ok: true, text: text }))
+      .catch(() => sendResponse({ ok: false }));
     return true;
   }
 

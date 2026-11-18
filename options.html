@@ -17,6 +17,11 @@
     .eh-dict-row { display: grid; grid-template-columns: 40px 28px 1fr 2fr auto auto; gap: 8px; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
     .eh-dict-row input[type=text] { width: 100%; box-sizing: border-box; }
     .eh-dict-row .eh-move { cursor: pointer; border: 1px solid #d1d5db; background: #fff; border-radius: 6px; width: 26px; height: 26px; }
+    .eh-exclude-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .eh-exclude-list .eh-empty { color: #6b7280; font-size: 13px; }
+    .eh-exclude-item { display: inline-flex; align-items: center; gap: 6px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 999px; padding: 4px 6px 4px 12px; font-size: 13px; }
+    .eh-exclude-item button { all: unset; cursor: pointer; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #6b7280; }
+    .eh-exclude-item button:hover { background: #e5e7eb; color: #dc3545; }
     .eh-status { font-size: 13px; color: #6b7280; }
     .eh-status.ok { color: #16a34a; }
     .eh-status.err { color: #dc3545; }
@@ -61,10 +66,10 @@
       <div class="eh-field">
         <label for="positionMode">Toolbar position</label>
         <select class="eh-select" id="positionMode">
-          <option value="cursor">Follow the mouse</option>
+          <option value="cursor">Next to the selected text</option>
           <option value="fixed">Fixed (drag to place on any page)</option>
         </select>
-        <span class="eh-hint">In "fixed" mode, drag the toolbar anywhere; the spot is remembered.</span>
+        <span class="eh-hint">"Next to the selected text" is the default. "Fixed" remembers the spot where you last dragged the toolbar.</span>
       </div>
       <div class="eh-divider"></div>
       <div class="eh-switch"><input type="checkbox" data-feature="inlineCard" id="f-inlineCard" /><label for="f-inlineCard">Show inline definition &amp; audio card</label></div>
@@ -77,6 +82,22 @@
       <div class="eh-switch"><input type="checkbox" data-feature="dragToolbar" id="f-dragToolbar" /><label for="f-dragToolbar">Allow dragging the toolbar and definition card</label></div>
       <div class="eh-switch"><input type="checkbox" data-feature="closeOnClickOutside" id="f-closeOnClickOutside" /><label for="f-closeOnClickOutside">Close when clicking elsewhere</label></div>
       <div class="eh-switch"><input type="checkbox" data-feature="openInPopupWindow" id="f-openInPopupWindow" /><label for="f-openInPopupWindow">Open dictionaries in a popup window (off = new tab)</label></div>
+    </div>
+
+    <!-- Sites where the extension stays quiet -->
+    <div class="eh-card-block">
+      <h2>Sites where English Helper stays off</h2>
+      <p class="eh-hint" style="color:#6b7280;font-size:12px;margin-top:-6px">
+        Selecting text on a listed site does nothing (including the right-click lookup).
+        A listed domain also covers its subdomains. Quickest way to add the page you are
+        reading: press the 🚫 button in the floating toolbar.
+      </p>
+      <div class="eh-field">
+        <label for="excludeInput">Add a website</label>
+        <input class="eh-input" type="text" id="excludeInput" placeholder="example.com" />
+        <button class="eh-btn-ghost" id="excludeAdd">Add</button>
+      </div>
+      <div id="excludeList" class="eh-exclude-list"></div>
     </div>
 
     <!-- Card content -->

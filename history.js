@@ -37,7 +37,7 @@
       .filter((d) => d.enabled)
       .forEach((dict) => {
         let el;
-        if (dict.icon) {
+        if (typeof dict.icon === "string" && dict.icon) {
           el = document.createElement("img");
           el.src = EH.runtimeGetURL(dict.icon);
           el.alt = dict.name;

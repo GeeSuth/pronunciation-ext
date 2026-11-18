@@ -69,12 +69,23 @@ must load **first** everywhere.
   `target` / `inline` / `definitions`. Add a language by editing that array only.
 - The service worker adds storage-change listeners (`EH.onHistoryChanged`,
   `EH.onSettingsChanged`); content and page scripts re-read settings the same way.
+- **Per-site exclusion**: `settings.excludedSites` holds bare hostnames where the floating
+  toolbar never appears. Use the `EH.normalizeSite` / `EH.siteMatches` / `EH.isSiteExcluded` /
+  `EH.addExcludedSite` / `EH.removeExcludedSite` helpers rather than comparing strings; a
+  listed domain also covers its subdomains and `www.` is normalized away. The toolbar's 🚫
+  button, the options page section, and the popup's "this site" row all edit this one list.
+  `content.js` checks it before showing anything (selection, right-click, keyboard command)
+  and answers `{ ok: true, excluded: true }` so `background.js` does not fall back to opening
+  a dictionary tab.
 - **Options page:** never replace the live `settings` object with the return value of
   `EH.saveSettings` (it is a deep clone). Dictionary rows hold references into the current
   `settings.dictionaries`, so reassigning orphans every row's handlers and later edits stop
   saving until reload. `options.js` keeps one live object and serializes saves via
   `saving` / `pendingSave` in `flushSave`.
 - Bump `version` in `manifest.json` for releases.
+- Content scripts can outlive the extension after a reload/update. Guard with
+  `EH.isContextAlive()` and use `EH.runtimeGetURL()` (returns `""` instead of throwing
+  "Extension context invalidated"); never call `chrome.runtime.getURL` directly in UI code.
 - `defcache` in local storage caches definitions for 30 days (bounded to 500 entries).
 
 ## Sync server (not yet built)

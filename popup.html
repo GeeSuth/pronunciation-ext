@@ -17,6 +17,21 @@
     .row { display: flex; gap: 8px; }
     .row button { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 13px; }
     .row button:hover { background: #f1f3f5; }
+    .site { background: #fff; border-radius: 10px; padding: 10px 12px; margin-top: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+    .site-head { display: flex; align-items: center; gap: 8px; }
+    .site-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .site-state { font-size: 11px; color: #6b7280; flex: 0 0 auto; }
+    .site-state.blocked { color: #dc3545; }
+    .site-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .site-actions button { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 12px; }
+    .site-actions button:hover { background: #f1f3f5; }
+    .site-actions button.danger { border-color: #fca5a5; color: #dc3545; }
+    .blocked-title { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; margin: 12px 0 6px; }
+    .blocked-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 108px; overflow: auto; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; background: #eef1f5; border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12px; }
+    .chip button { all: unset; cursor: pointer; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: #6b7280; }
+    .chip button:hover { background: #dfe3e8; color: #dc3545; }
+    .blocked-empty { color: #6b7280; font-size: 12px; }
     .sync { margin-top: 12px; font-size: 11px; color: #6b7280; text-align: center; }
     .footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; color: #6b7280; }
     .footer a { color: #4b5563; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
@@ -32,11 +47,24 @@
     <div class="sub">Select any word for pronunciation &amp; dictionary buttons.</div>
     <button id="toggle">Loading&hellip;</button>
 
+    <div class="site">
+      <div class="site-head">
+        <span class="site-name" id="siteName">&hellip;</span>
+        <span class="site-state" id="siteState"></span>
+      </div>
+      <div class="site-actions">
+        <button id="toggleSite" disabled>Block this site</button>
+      </div>
+    </div>
+
     <div class="stats">
       <div class="stat"><div class="v" id="s-total">0</div><div class="k">Words</div></div>
       <div class="stat"><div class="v" id="s-today">0</div><div class="k">Today</div></div>
       <div class="stat"><div class="v" id="s-due">0</div><div class="k">Due</div></div>
     </div>
+
+    <div class="blocked-title">Blocked sites</div>
+    <div class="blocked-list" id="blockedList"></div>
 
     <div class="row">
       <button id="openHistory">History</button>

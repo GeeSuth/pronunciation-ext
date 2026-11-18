@@ -314,6 +314,68 @@
   });
 
   /* ------------------------------------------------------------------ *
+   * Blocked websites
+   * ------------------------------------------------------------------ */
+
+  function renderExcluded() {
+    const list = $("excludeList");
+    list.innerHTML = "";
+    const sites = Array.isArray(settings.excludedSites) ? settings.excludedSites : [];
+
+    if (!sites.length) {
+      const empty = document.createElement("span");
+      empty.className = "eh-empty";
+      empty.textContent = "No blocked sites yet \u2014 the toolbar shows everywhere.";
+      list.appendChild(empty);
+      return;
+    }
+
+    sites.forEach((site) => {
+      const chip = document.createElement("span");
+      chip.className = "eh-exclude-item";
+
+      const name = document.createElement("span");
+      name.textContent = site;
+      chip.appendChild(name);
+
+      const del = document.createElement("button");
+      del.type = "button";
+      del.textContent = "\u2715";
+      del.title = "Allow English Helper on " + site;
+      del.addEventListener("click", () => {
+        if (!EH.removeExcludedSite(settings, site)) return;
+        renderExcluded();
+        scheduleSave();
+      });
+      chip.appendChild(del);
+
+      list.appendChild(chip);
+    });
+  }
+
+  function addExcludedFromInput() {
+    const input = $("excludeInput");
+    const value = input.value.trim();
+    if (!value) return;
+    if (!EH.addExcludedSite(settings, value)) {
+      toast(EH.normalizeSite(value) ? "That site is already blocked" : "Enter a site like example.com");
+      input.select();
+      return;
+    }
+    input.value = "";
+    renderExcluded();
+    scheduleSave();
+  }
+
+  $("excludeAdd").addEventListener("click", addExcludedFromInput);
+  $("excludeInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addExcludedFromInput();
+    }
+  });
+
+  /* ------------------------------------------------------------------ *
    * Sync
    * ------------------------------------------------------------------ */
 
@@ -444,6 +506,7 @@
     populateLanguages();
     fillForm();
     renderDicts();
+    renderExcluded();
     bindSimpleControls();
     refreshSyncStatus();
   })();

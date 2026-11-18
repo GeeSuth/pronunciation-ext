@@ -12,7 +12,7 @@
   const api = root.chrome || root.browser || {};
   const EH = (root.EH = root.EH || {});
   EH.api = api;
-  EH.VERSION = "3.0.0";
+  EH.VERSION = "3.3.0";
 
   /* ------------------------------------------------------------------ *
    * Constants / defaults
@@ -177,12 +177,16 @@
     }
   ];
 
+  EH.SETTINGS_VERSION = 3;
+
   EH.DEFAULT_SETTINGS = {
     enabled: true,
     accent: "us",
     buttonSize: "md", // sm | md | lg
     theme: "auto", // auto | light | dark
+    settingsVersion: EH.SETTINGS_VERSION, // bumped when a stored setting needs a one-time migration
     position: { mode: "cursor", x: 0, y: 0 }, // cursor | fixed
+    excludedSites: [], // hostnames where the floating toolbar stays hidden
     features: {
       inlineCard: true,
       translate: true,
@@ -307,7 +311,17 @@
 
   EH.mergeSettings = function (stored) {
     const merged = EH.deepMerge(EH.DEFAULT_SETTINGS, stored || {});
+    // Before 3.3 any click on the toolbar body (no drag needed) flipped
+    // position.mode to "fixed" and saved that spot, so the toolbar kept opening
+    // far away from the selected text. Reset that stale spot once. The version
+    // is read from the stored blob (defaults would always look up to date).
+    const storedVersion = (stored && stored.settingsVersion) || 0;
+    if (storedVersion < EH.SETTINGS_VERSION) {
+      merged.position = EH.clone(EH.DEFAULT_SETTINGS.position);
+    }
+    merged.settingsVersion = EH.SETTINGS_VERSION;
     merged.dictionaries = ensureDictionaries(merged.dictionaries);
+    if (!Array.isArray(merged.excludedSites)) merged.excludedSites = [];
     return merged;
   };
 
@@ -328,6 +342,72 @@
         cb(EH.mergeSettings(changes.settings.newValue));
       }
     });
+  };
+
+  /* ------------------------------------------------------------------ *
+   * Per-site exclusion ("don't run on this website")
+   *
+   * Saved as bare hostnames in `settings.excludedSites`. A listed domain also
+   * covers its subdomains (example.com blocks m.example.com) and "www." is
+   * ignored on both sides, so users don't have to think about it.
+   * ------------------------------------------------------------------ */
+
+  EH.normalizeSite = function (value) {
+    let raw = String(value || "").trim().toLowerCase();
+    if (!raw) return "";
+    if (!/^[a-z][a-z0-9+.-]*:\/\//.test(raw)) raw = "http://" + raw;
+    let host = "";
+    try {
+      const url = new URL(raw);
+      // Only web pages can be blocked (not chrome://, about:, the extension's
+      // own pages, data: ...).
+      if (!/^https?:$/.test(url.protocol)) return "";
+      host = url.hostname.toLowerCase();
+    } catch (e) {
+      host = String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+        .split("/")[0]
+        .split(":")[0];
+    }
+    host = host.replace(/^www\./, "").replace(/\.$/, "");
+    if (!host || !/^[a-z0-9.-]+$/.test(host)) return "";
+    return host;
+  };
+
+  EH.siteMatches = function (host, site) {
+    const h = EH.normalizeSite(host);
+    const s = EH.normalizeSite(site);
+    if (!h || !s) return false;
+    return h === s || h.slice(-(s.length + 1)) === "." + s;
+  };
+
+  EH.isSiteExcluded = function (url, settings) {
+    const list = settings && Array.isArray(settings.excludedSites) ? settings.excludedSites : [];
+    if (!list.length) return false;
+    const host = EH.normalizeSite(url);
+    if (!host) return false;
+    return list.some((site) => EH.siteMatches(host, site));
+  };
+
+  /* Mutates the given settings object (they are kept live by the callers). */
+  EH.addExcludedSite = function (settings, value) {
+    const site = EH.normalizeSite(value);
+    if (!site) return false;
+    if (!Array.isArray(settings.excludedSites)) settings.excludedSites = [];
+    if (settings.excludedSites.some((s) => EH.siteMatches(site, s))) return false;
+    settings.excludedSites.push(site);
+    settings.excludedSites.sort();
+    return true;
+  };
+
+  EH.removeExcludedSite = function (settings, site) {
+    if (!settings || !Array.isArray(settings.excludedSites)) return false;
+    const next = settings.excludedSites.filter((s) => !EH.siteMatches(s, site));
+    if (next.length === settings.excludedSites.length) return false;
+    settings.excludedSites = next;
+    return true;
   };
 
   /* ------------------------------------------------------------------ *
@@ -859,11 +939,37 @@
   };
 
   EH.openOptions = function () {
-    if (api.runtime && api.runtime.openOptionsPage) return api.runtime.openOptionsPage();
-    return EH.openTab(api.runtime.getURL("options.html"));
+    try {
+      if (api.runtime && api.runtime.openOptionsPage) return api.runtime.openOptionsPage();
+    } catch (e) {
+      /* context invalidated - fall through */
+    }
+    const url = EH.runtimeGetURL("options.html");
+    return url ? EH.openTab(url) : null;
+  };
+
+  /*
+   * After the extension is reloaded/updated (e.g. right after a merge),
+   * content scripts already running in open tabs keep executing, but their
+   * extension context is gone. chrome.runtime.getURL() then throws
+   * "Extension context invalidated". Callers use isContextAlive() to bail out
+   * instead of spewing errors into the page console.
+   */
+  EH.isContextAlive = function () {
+    try {
+      return !!(api.runtime && api.runtime.id);
+    } catch (e) {
+      return false;
+    }
   };
 
   EH.runtimeGetURL = function (path) {
-    return api.runtime && api.runtime.getURL ? api.runtime.getURL(path) : path;
+    if (typeof path !== "string" || !path) return "";
+    if (!EH.isContextAlive()) return "";
+    try {
+      return api.runtime.getURL(path);
+    } catch (e) {
+      return "";
+    }
   };
 })(typeof globalThis !== "undefined" ? globalThis : self);
